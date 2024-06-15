@@ -3,15 +3,19 @@
     <div class="hero marketing-hero is-centered is-fullheight">
       <div class="hero-body">
         <div class="container">
-          <div class="columns is-vcentered has-text-centered">
+          <div class="columns is-centered has-text-centered">
             <div class="column">
-              <FullCalendar :options='calendarOptions' ref="FullCalendar">
+              <FullCalendar
+                  :options='calendarOptions'
+                  ref="FullCalendar"
+                  @eventClick="onEventClick"
+              />
 
-              </FullCalendar>
               <AddEventModal
                   :show-modal="showModal"
                   @close="showModal = false"
-                  @add-event="addEventToCalendar"
+                  :event-to-edit="eventToEdit"
+                  @save-event="saveEvent"
               />
             </div>
           </div>
@@ -21,6 +25,7 @@
   </div>
 </template>
 <script>
+import { useEventStore } from '~/stores/events'
 import FullCalendar from '@fullcalendar/vue3'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
@@ -32,9 +37,18 @@ definePageMeta({
 
 export default {
   components: {AddEventModal, FullCalendar},
+
+  setup() {
+    const eventStore = useEventStore()
+    return {
+      eventStore
+    }
+  },
+
   data() {
     return {
       showModal: false,
+      eventToEdit: null,
       eventData: {
         title: '',
         date: '',
@@ -44,10 +58,9 @@ export default {
         plugins: [ dayGridPlugin, interactionPlugin, timeGridPlugin ],
         initialView: 'dayGridMonth',
         nowIndicator: true,
+        eventClick: this.onEventClick,
         editable: true,
-        initialEvents: [
-          { title: 'nice event', start: new Date() }
-        ],
+        upgradeSize: true,
         headerToolbar: {
           left: "prev,next today",
           center: 'addEventButton',
@@ -57,24 +70,97 @@ export default {
         customButtons: {
           addEventButton: {
             text: 'Add event...',
-            click: this.addEventToCalendar
+            click: this.showAddEventModal
           }
         },
-        dateClick: this.handleDateClick,
-        events: []
       }
     }
   },
+
   methods: {
-    handleDateClick() {
+    showAddEventModal() {
+      this.eventToEdit = null
       this.showModal = true
     },
-    addEventToCalendar(eventData) {
-      this.showModal = true
-        this.$refs.FullCalendar.getApi().addEvent(eventData);
+
+    onEventClick(info) {
+      const eventObj = info.event
+      this.eventToEdit = {
+        id: eventObj.id,
+        title: eventObj.title,
+        date: eventObj.start.toISOString().substring(0, 10),
+        time: eventObj.start.toISOString().substring(11, 16)
       }
-    }
+      this.showModal = true
+    },
+
+    saveEvent(eventData) {
+      if (this.eventToEdit) {
+        this.eventStore.updateEvent(eventData)
+        const calendarEvent = this.$refs.FullCalendar.getApi().getEventById(eventData.id)
+        if (calendarEvent) {
+          calendarEvent.setProp('title', eventData.title)
+          calendarEvent.setStart(`${eventData.date}T${eventData.time}`)
+        }
+      } else {
+        eventData.id = Date.now()
+        this.eventStore.addEvent(eventData)
+        console.log(this.$refs.FullCalendar.getApi())
+        this.$refs.FullCalendar.getApi().addEvent({
+          id: eventData.id,
+          title: eventData.title,
+          start: `${eventData.date}T${eventData.time}`
+        })
+      }
+      this.showModal = false
+    },
+  }
 }
 </script>
+
+
+<style>
+.fc .fc-daygrid-event {
+  background-color: var(--primary);
+  color: white;
+  height: 3rem;
+  margin-top: 5px;
+  border: none;
+}
+
+.is-dark {
+  a {
+    color: white;
+  }
+  .fc-daygrid-day-top .fc-daygrid-day-number {
+    color: white;
+  }
+}
+
+div.fc-daygrid-day-frame  {
+  background: rgba(76, 76, 76, 0.03);
+}
+
+a {
+  color: var(--fc-neutral-text-color);
+}
+
+tbody {
+  tr {
+    .fc-scrollgrid-section .fc-scrollgrid-section-body  .fc-scrollgrid-section-liquid {
+      height: 40px;
+    }
+  }
+}
+
+.fc .fc-timegrid-slot {
+  height: 3.5rem;
+}
+
+thead th.fc-col-header-cell  {
+  background:rgba(76, 76, 76, 0.03);
+}
+
+</style>
 
 

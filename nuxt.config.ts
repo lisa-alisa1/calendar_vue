@@ -4,6 +4,7 @@ export default defineNuxtConfig({
   modules: [
     '@vueuse/nuxt',
   ],
+  plugins: ['~/plugins/pinia.js'],
   css: [
     '@fontsource-variable/roboto-flex/index.css',
     '@fontsource-variable/montserrat/index.css',

@@ -20,8 +20,13 @@
         </label>
       </div>
       <div class="modal-footer">
-        <button  class="button v-button" @click="closeModal">Закрыть</button>
-        <button class="button v-button add-button"  @click="addEventToCalendar">Добавить</button>
+        <button  class="button v-button" @click="closeModal">Close</button>
+        <button
+            class="button v-button add-button"
+            @click="saveEvent"
+        >
+          {{ isEditing ? 'Save' : 'Add' }}
+        </button>
       </div>
     </div>
   </div>
@@ -29,9 +34,10 @@
 
 <script>
 export default {
-  props: ['showModal'],
+  props: ['showModal','eventToEdit'],
   data() {
     return {
+      isEditing: false,
       eventData: {
         title: '',
         date: '',
@@ -39,48 +45,63 @@ export default {
       }
     };
   },
+  watch: {
+    eventToEdit: {
+      immediate: true,
+      handler(newVal) {
+        if (newVal) {
+          console.log('newVal', newVal)
+          this.isEditing = true
+          this.eventData = {
+            id: newVal.id,
+            title: newVal.title,
+            time: newVal.time
+          }
+        } else {
+          this.isEditing = false
+          this.clearEventData()
+        }
+      }
+    }
+  },
   methods: {
     closeModal() {
       this.$emit('close');
     },
-    addEventToCalendar() {
-      const { title, date, time } = this.eventData;
+    saveEvent() {
+      const { title, date, time } = this.eventData
 
       if (!title || !date || !time) {
-        alert('Заполните все поля');
-        return;
+        alert('Заполните все поля')
+        return
       }
 
-      const dateTimeStr = `${date}T${time}`;
-      const eventDateTime = new Date(dateTimeStr);
+      const dateTimeStr = `${date}T${time}`
+      const eventDateTime = new Date(dateTimeStr)
 
       if (isNaN(eventDateTime.getTime())) {
-        alert('Неверный формат даты и времени');
-        return;
+        alert('Неверный формат даты и времени')
+        return
       }
 
-      this.$emit('add-event', {
-        title: title,
-        start: eventDateTime,
-        allDay: false
-      });
+      this.$emit('save-event', {
+        ...this.eventData,
+        start: eventDateTime
+      })
 
-      this.closeModal();
-      this.clearEventData();
-      // alert('Событие успешно добавлено');
+      this.closeModal()
+      this.clearEventData()
     },
     clearEventData() {
       this.eventData = {
         title: '',
         date: '',
         time: ''
-      };
+      }
     }
   }
 }
 </script>
-
-
 
 
 <style scoped lang="scss">
@@ -90,82 +111,87 @@ export default {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(51, 51, 51, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
 
-
-}
-
-.modal {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: start;
-  background: color-mix(in oklab, var(--dark-sidebar), black 4%);;
-  padding: 20px 30px;
-  border-radius: 10px;
-  width: 500px;
-  max-width: 100%;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  z-index: 1001;
-  position: relative;
-}
-
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-  align-items: center;
-  padding-bottom: 10px;
-  margin-bottom: 20px;
-}
-
-.modal-header h3 {
-  margin: 0;
-}
-
-.close-button {
-  background: transparent;
-  border: none;
-  font-size: 1.5em;
-  cursor: pointer;
-}
-
-.modal-body {
-  margin-bottom: 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: start;
-  width: 100%;
-
-  label {
+  .modal {
     display: flex;
     flex-direction: column;
+    justify-content: center;
     align-items: start;
-    width: 100%;
+    background: white;
+    padding: 20px 30px;
+    border-radius: 10px;
+    width: 500px;
+    max-width: 100%;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    z-index: 1001;
+    position: relative;
 
-    .input {
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
       width: 100%;
-      margin: 5px 0 5px 0;
+      align-items: center;
+      padding-bottom: 10px;
+      margin-bottom: 20px;
     }
 
+    .modal-header h3 {
+      margin: 0;
+    }
 
+    .close-button {
+      background: transparent;
+      border: none;
+      font-size: 1.5em;
+      cursor: pointer;
+    }
+
+    .modal-body {
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: start;
+      width: 100%;
+
+      label {
+        display: flex;
+        flex-direction: column;
+        align-items: start;
+        width: 100%;
+
+        .input {
+          width: 100%;
+          margin: 5px 0 5px 0;
+        }
+      }
+    }
+
+    .modal-footer {
+      margin-top: 5%;
+      text-align: right;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+
+      button.add-button {
+        background-color: var(--primary);
+      }
+    }
   }
 }
 
-.modal-footer {
-  margin-top: 5%;
-  text-align: right;
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-
-  button.add-button {
-    background-color: var(--primary);
+.is-dark {
+  .modal {
+    background: color-mix(in oklab, var(--dark-sidebar), black 4%);;
   }
+}
+
+.fc .fc-scrollgrid-liquid {
+  background: #1a1a1f;
 }
 </style>
