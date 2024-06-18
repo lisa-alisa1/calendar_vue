@@ -45,16 +45,17 @@ export default {
       }
     };
   },
+
   watch: {
     eventToEdit: {
       immediate: true,
       handler(newVal) {
         if (newVal) {
-          console.log('newVal', newVal)
           this.isEditing = true
           this.eventData = {
             id: newVal.id,
             title: newVal.title,
+            date: newVal.date,
             time: newVal.time
           }
         } else {
@@ -64,19 +65,18 @@ export default {
       }
     }
   },
+
   methods: {
     closeModal() {
       this.$emit('close');
     },
     saveEvent() {
-      const { title, date, time } = this.eventData
-
-      if (!title || !date || !time) {
+      if (!this.eventData.title || !this.eventData.date || !this.eventData.time ) {
         alert('Заполните все поля')
         return
       }
 
-      const dateTimeStr = `${date}T${time}`
+      const dateTimeStr = `${this.eventData.date}T${this.eventData.time}`
       const eventDateTime = new Date(dateTimeStr)
 
       if (isNaN(eventDateTime.getTime())) {
@@ -92,6 +92,7 @@ export default {
       this.closeModal()
       this.clearEventData()
     },
+
     clearEventData() {
       this.eventData = {
         title: '',

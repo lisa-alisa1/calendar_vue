@@ -9,10 +9,10 @@ export const useEventStore = defineStore('events', {
             this.events.push(event)
         },
         updateEvent(updatedEvent) {
-            const index = this.events.findIndex(event => event.id === updatedEvent.id)
-            if (index !== -1) {
-                this.events.splice(index, 1, updatedEvent)
-            }
-        }
+            const stateEvents = this.events
+            const eventToUpdate = stateEvents.find(event => (event.id) == updatedEvent.id)
+
+            Object.assign(eventToUpdate, updatedEvent)
+        },
     }
 })

@@ -5,10 +5,13 @@
         <div class="container">
           <div class="columns is-centered has-text-centered">
             <div class="column">
+              {{ events }}
               <FullCalendar
                   :options='calendarOptions'
                   ref="FullCalendar"
                   @eventClick="onEventClick"
+                  :events="events"
+                  @eventDrop="handleEventDrop"
               />
 
               <AddEventModal
@@ -25,6 +28,7 @@
   </div>
 </template>
 <script>
+import { mapState } from 'pinia'
 import { useEventStore } from '~/stores/events'
 import FullCalendar from '@fullcalendar/vue3'
 import dayGridPlugin from '@fullcalendar/daygrid'
@@ -40,8 +44,19 @@ export default {
 
   setup() {
     const eventStore = useEventStore()
+
+    const handleEventDrop = (info) => {
+      const updatedEvent = {
+        ...info.event.extendedProps,
+        date: info.event.startStr,
+        id: String(info.event.id)
+      }
+      eventStore.updateEvent(updatedEvent)
+    }
+
     return {
-      eventStore
+      eventStore,
+      handleEventDrop
     }
   },
 
@@ -59,6 +74,7 @@ export default {
         initialView: 'dayGridMonth',
         nowIndicator: true,
         eventClick: this.onEventClick,
+        eventDrop: this.handleEventDrop,
         editable: true,
         upgradeSize: true,
         headerToolbar: {
@@ -75,6 +91,10 @@ export default {
         },
       }
     }
+  },
+
+  computed: {
+    ...mapState(useEventStore, ['events'])
   },
 
   methods: {
@@ -98,6 +118,7 @@ export default {
       if (this.eventToEdit) {
         this.eventStore.updateEvent(eventData)
         const calendarEvent = this.$refs.FullCalendar.getApi().getEventById(eventData.id)
+
         if (calendarEvent) {
           calendarEvent.setProp('title', eventData.title)
           calendarEvent.setStart(`${eventData.date}T${eventData.time}`)
@@ -105,7 +126,6 @@ export default {
       } else {
         eventData.id = Date.now()
         this.eventStore.addEvent(eventData)
-        console.log(this.$refs.FullCalendar.getApi())
         this.$refs.FullCalendar.getApi().addEvent({
           id: eventData.id,
           title: eventData.title,
@@ -114,7 +134,7 @@ export default {
       }
       this.showModal = false
     },
-  }
+  },
 }
 </script>
 
